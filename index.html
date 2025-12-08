@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Website</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h1 id="school-name" class="editable" data-field="schoolName">Excellence School</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#faculty">Faculty</a></li>
+                <li><a href="#education">Education</a></li>
+                <li><a href="#functions">Functions</a></li>
+                <li id="admin-link"><a href="#" onclick="showLoginModal()">Admin</a></li>
+                <li id="logout-link" style="display: none;"><a href="#" onclick="logout()">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Edit Mode Button (shown only when logged in) -->
+    <div id="edit-mode-controls" style="display: none;">
+        <button class="btn-edit-mode" onclick="toggleEditMode()">
+            <span id="edit-mode-text">Enable Edit Mode</span>
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2 class="editable" data-field="heroTitle">Welcome to Our School</h2>
+            <p class="editable" data-field="heroDescription">Empowering minds, shaping futures. Join us in our journey of excellence in education.</p>
+            <a href="#about" class="btn-primary">Learn More</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="section-title">About Our School</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p class="editable" data-field="aboutText1">Our school has been a beacon of educational excellence for over 50 years. We are committed to providing quality education and nurturing young minds to become responsible global citizens.</p>
+                    <p class="editable" data-field="aboutText2">With state-of-the-art facilities and a dedicated team of educators, we strive to create an environment where every student can reach their full potential.</p>
+                </div>
+                <div class="about-stats">
+                    <div class="stat-item">
+                        <h3 class="editable" data-field="students">2500+</h3>
+                        <p>Students</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3 class="editable" data-field="teachers">150+</h3>
+                        <p>Teachers</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3 class="editable" data-field="years">50+</h3>
+                        <p>Years</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Faculty Section -->
+    <section id="faculty" class="section bg-light">
+        <div class="container">
+            <h2 class="section-title">Our Faculty</h2>
+            <p class="section-subtitle editable" data-field="facultyIntro">Meet our dedicated team of educators who are committed to student success.</p>
+            <div class="faculty-grid">
+                <div class="faculty-card">
+                    <div class="faculty-image">
+                        <img src="https://via.placeholder.com/200" alt="Principal" class="editable-image" data-field="principalImage">
+                    </div>
+                    <h3 class="editable" data-field="principalName">Dr. Sarah Johnson</h3>
+                    <p class="faculty-role editable" data-field="principalRole">Principal</p>
+                    <p class="editable" data-field="principalBio">With over 20 years of experience in education, Dr. Johnson leads our school with vision and dedication.</p>
+                </div>
+                <div class="faculty-card">
+                    <div class="faculty-image">
+                        <img src="https://via.placeholder.com/200" alt="Vice Principal" class="editable-image" data-field="vicePrincipalImage">
+                    </div>
+                    <h3 class="editable" data-field="vicePrincipalName">Mr. James Smith</h3>
+                    <p class="faculty-role editable" data-field="vicePrincipalRole">Vice Principal</p>
+                    <p class="editable" data-field="vicePrincipalBio">Mr. Smith brings excellence in academic administration and student development.</p>
+                </div>
+                <div class="faculty-card">
+                    <div class="faculty-image">
+                        <img src="https://via.placeholder.com/200" alt="HOD Science" class="editable-image" data-field="hodScienceImage">
+                    </div>
+                    <h3 class="editable" data-field="hodScienceName">Dr. Emily Davis</h3>
+                    <p class="faculty-role editable" data-field="hodScienceRole">Head of Science Department</p>
+                    <p class="editable" data-field="hodScienceBio">Dr. Davis has published numerous research papers and inspires students in STEM fields.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Programs Section -->
+    <section id="education" class="section">
+        <div class="container">
+            <h2 class="section-title">Education Programs</h2>
+            <p class="section-subtitle editable" data-field="educationIntro">We offer comprehensive educational programs from primary to high school.</p>
+            <div class="programs-grid">
+                <div class="program-card">
+                    <div class="program-icon">🎓</div>
+                    <h3 class="editable" data-field="program1Title">Primary Education</h3>
+                    <p class="editable" data-field="program1Desc">Foundation years focusing on core subjects and developing essential learning skills (Grades 1-5).</p>
+                </div>
+                <div class="program-card">
+                    <div class="program-icon">📚</div>
+                    <h3 class="editable" data-field="program2Title">Middle School</h3>
+                    <p class="editable" data-field="program2Desc">Building on fundamentals with introduction to advanced subjects and critical thinking (Grades 6-8).</p>
+                </div>
+                <div class="program-card">
+                    <div class="program-icon">🔬</div>
+                    <h3 class="editable" data-field="program3Title">High School</h3>
+                    <p class="editable" data-field="program3Desc">Advanced curriculum preparing students for higher education and careers (Grades 9-12).</p>
+                </div>
+                <div class="program-card">
+                    <div class="program-icon">🎨</div>
+                    <h3 class="editable" data-field="program4Title">Arts & Sports</h3>
+                    <p class="editable" data-field="program4Desc">Comprehensive programs in music, visual arts, drama, and various sports activities.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Functions/Events Section -->
+    <section id="functions" class="section bg-light">
+        <div class="container">
+            <h2 class="section-title">School Functions & Events</h2>
+            <p class="section-subtitle editable" data-field="functionsIntro">Stay updated with our upcoming events and functions.</p>
+            <div class="events-grid">
+                <div class="event-card">
+                    <div class="event-date">
+                        <span class="date-day editable" data-field="event1Day">15</span>
+                        <span class="date-month editable" data-field="event1Month">DEC</span>
+                    </div>
+                    <div class="event-details">
+                        <h3 class="editable" data-field="event1Title">Annual Day Celebration</h3>
+                        <p class="editable" data-field="event1Desc">A grand celebration showcasing student talents, cultural performances, and achievements.</p>
+                    </div>
+                </div>
+                <div class="event-card">
+                    <div class="event-date">
+                        <span class="date-day editable" data-field="event2Day">20</span>
+                        <span class="date-month editable" data-field="event2Month">JAN</span>
+                    </div>
+                    <div class="event-details">
+                        <h3 class="editable" data-field="event2Title">Science Exhibition</h3>
+                        <p class="editable" data-field="event2Desc">Students present innovative science projects and experiments to inspire young minds.</p>
+                    </div>
+                </div>
+                <div class="event-card">
+                    <div class="event-date">
+                        <span class="date-day editable" data-field="event3Day">10</span>
+                        <span class="date-month editable" data-field="event3Month">FEB</span>
+                    </div>
+                    <div class="event-details">
+                        <h3 class="editable" data-field="event3Title">Sports Day</h3>
+                        <p class="editable" data-field="event3Desc">Inter-house sports competition featuring athletics, games, and team sports.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <div class="container">
+            <h2 class="section-title">Contact Us</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <h4>Address</h4>
+                        <p class="editable" data-field="address">123 Education Street, Knowledge City, 12345</p>
+                    </div>
+                    <div class="contact-item">
+                        <h4>Phone</h4>
+                        <p class="editable" data-field="phone">+1 (555) 123-4567</p>
+                    </div>
+                    <div class="contact-item">
+                        <h4>Email</h4>
+                        <p class="editable" data-field="email">info@excellenceschool.edu</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 <span class="editable" data-field="footerSchoolName">Excellence School</span>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLoginModal()">&times;</span>
+            <h2>Admin Login</h2>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+                <p class="login-hint">Default credentials: admin / admin123</p>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
