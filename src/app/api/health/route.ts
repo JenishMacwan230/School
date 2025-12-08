@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import getClientPromise from '@/lib/mongodb';
 
 // GET /api/health - Check MongoDB connection health
 export async function GET() {
   try {
-    const client = await clientPromise;
+    const client = await getClientPromise();
     const db = client.db();
     
     // Ping the database to check connection
