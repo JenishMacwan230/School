@@ -1,0 +1,7 @@
+{
+  "name": "school-root",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -F client -F server --parallel dev"
+  }
+}
