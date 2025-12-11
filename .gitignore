@@ -1,0 +1,9 @@
+# Ignore ALL node_modules everywhere
+node_modules/
+**/node_modules/
+.pnpm/
+.pnpm-store/
+
+# Build output
+.next/
+dist/
