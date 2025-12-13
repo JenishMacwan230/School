@@ -9,16 +9,26 @@ import {
   Info,
   UserRoundPen,
   GraduationCap,
+  LogIn ,
+  UserCheck ,
+  ArrowRight , 
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import path from "path";
+
+// const router = useRouter();
 
 const navItems = [
-  { id: "school", label: "School", Icon: School, gradient: "from-blue-500 to-indigo-500" },
-  { id: "about", label: "About", Icon: Info, gradient: "from-pink-500 to-rose-500" },
-  { id: "teachers", label: "Teachers", Icon: UserRoundPen, gradient: "from-green-500 to-teal-500" },
-  { id: "students", label: "Students", Icon: GraduationCap, gradient: "from-amber-500 to-orange-500" },
+  { id: "school", label: "School", Icon: School, gradient: "from-teal-600 to-cyan-600",path:"/" },
+  { id: "about", label: "About", Icon: Info, gradient: "from-pink-500 to-rose-500" ,path:"/"},
+  { id: "teachers", label: "Teachers", Icon: UserRoundPen, gradient: "from-green-500 to-teal-500",path:"/" },
+  { id: "students", label: "Students", Icon: GraduationCap, gradient: "from-amber-500 to-orange-500" ,path:"/"},
+   { id: "login", label: "LogIn", Icon: LogIn  , gradient: "from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500" ,path:"/login"},
+  
 ];
 
 export default function Navbar() {
+  const router = useRouter(); 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("school");
 
@@ -35,7 +45,7 @@ export default function Navbar() {
     <>
       {/* NAVBAR CONTAINER */}
       <nav className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-20 px-4">
           
           {/* LEFT — LOGO */}
           <Logo />
@@ -49,7 +59,11 @@ export default function Navbar() {
               return (
                 <motion.button
                   key={item.id}
-                  onClick={() => setActive(item.id)}
+                  onClick={() => {
+                    setActive(item.id)
+                  router.push(item.path);
+                }
+                  }
                   whileHover={{ scale: 1.05 }}
                   className={`relative px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition
                     ${isActive ? "text-white" : "text-slate-700 dark:text-slate-300"}
@@ -129,6 +143,7 @@ export default function Navbar() {
                       onClick={() => {
                         setActive(item.id);
                         setOpen(false);
+                        router.push(item.path);
                       }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-lg transition
                         ${isActive
