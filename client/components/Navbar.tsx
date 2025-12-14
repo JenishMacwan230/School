@@ -2,37 +2,70 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import {
+  Menu,
+  X,
   School,
   Info,
   UserRoundPen,
   GraduationCap,
-  LogIn ,
-  UserCheck ,
-  ArrowRight , 
+  LogIn,
+  ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import path from "path";
+import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
+import { useAuthStore } from "@/store/auth";
 
-// const router = useRouter();
-
+/* ---------------- NAV ITEMS (STATIC) ---------------- */
 const navItems = [
-  { id: "school", label: "School", Icon: School, gradient: "from-teal-600 to-cyan-600",path:"/" },
-  { id: "about", label: "About", Icon: Info, gradient: "from-pink-500 to-rose-500" ,path:"/"},
-  { id: "teachers", label: "Teachers", Icon: UserRoundPen, gradient: "from-green-500 to-teal-500",path:"/" },
-  { id: "students", label: "Students", Icon: GraduationCap, gradient: "from-amber-500 to-orange-500" ,path:"/"},
-   { id: "login", label: "LogIn", Icon: LogIn  , gradient: "from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500" ,path:"/login"},
-  
+  {
+    id: "school",
+    label: "School",
+    Icon: School,
+    gradient: "from-teal-600 to-cyan-600",
+    path: "/",
+  },
+  {
+    id: "about",
+    label: "About",
+    Icon: Info,
+    gradient: "from-pink-500 to-rose-500",
+    path: "/about",
+  },
+  {
+    id: "teachers",
+    label: "Teachers",
+    Icon: UserRoundPen,
+    gradient: "from-green-500 to-teal-500",
+    path: "/teachers",
+  },
+  {
+    id: "students",
+    label: "Students",
+    Icon: GraduationCap,
+    gradient: "from-amber-500 to-orange-500",
+    path: "/students",
+  },
 ];
 
 export default function Navbar() {
-  const router = useRouter(); 
+  const router = useRouter();
+  const { user, openLogin, logout } = useAuthStore();
+
+  
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("school");
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  // Close drawer with ESC
+  /* ---------------- SCROLL EFFECT ---------------- */
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  /* ---------------- ESC TO CLOSE DRAWER ---------------- */
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -43,14 +76,24 @@ export default function Navbar() {
 
   return (
     <>
-      {/* NAVBAR CONTAINER */}
-      <nav className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-20 px-4">
-          
-          {/* LEFT — LOGO */}
+      {/* ================= NAVBAR ================= */}
+      <nav
+        className={cn(
+          "w-full fixed z-20 transition-colors duration-300",
+          isScrolled ? "bg-transparent" : "bg-white dark:bg-slate-900"
+        )}
+      >
+        <div
+          className={cn(
+            "max-w-7xl  h-20 mx-auto mt-2 flex items-center justify-between px-4 transition-all duration-300",
+            isScrolled &&
+              "bg-background/60 max-w-6xl rounded-2xl border backdrop-blur-lg lg:px-5"
+          )}
+        >
+          {/* LOGO */}
           <Logo />
 
-          {/* RIGHT — DESKTOP MENU (only lg screens) */}
+          {/* ================= DESKTOP MENU ================= */}
           <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => {
               const Icon = item.Icon;
@@ -60,21 +103,24 @@ export default function Navbar() {
                 <motion.button
                   key={item.id}
                   onClick={() => {
-                    setActive(item.id)
-                  router.push(item.path);
-                }
-                  }
+                    setActive(item.id);
+                    router.push(item.path);
+                  }}
                   whileHover={{ scale: 1.05 }}
-                  className={`relative px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition
-                    ${isActive ? "text-white" : "text-slate-700 dark:text-slate-300"}
-                  `}
+                  className={cn(
+                    "relative px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition",
+                    isActive
+                      ? "text-white"
+                      : "text-slate-700 dark:text-slate-300"
+                  )}
                 >
-                  {/* Colorful gradient background when active */}
                   {isActive && (
                     <motion.div
                       layoutId="activeNavGradient"
-                      className={`absolute inset-0 bg-gradient-to-r ${item.gradient} rounded-xl shadow-lg`}
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      className={cn(
+                        "absolute inset-0 bg-gradient-to-r rounded-xl shadow-lg",
+                        item.gradient
+                      )}
                     />
                   )}
 
@@ -82,24 +128,46 @@ export default function Navbar() {
                     <Icon className="w-4 h-4" />
                     {item.label}
                   </div>
-
                 </motion.button>
               );
             })}
+
+            {/* -------- AUTH BUTTON (DESKTOP) -------- */}
+            {!user ? (
+              <motion.button
+                onClick={openLogin}
+                whileHover={{ scale: 1.05 }}
+                className="px-4 py-2 rounded-xl flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 bg-gradient-to-r from-blue-400 to-purple-400 text-white"
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={async () => {
+                  await logout();
+                  router.replace("/");
+                }}
+                whileHover={{ scale: 1.05 }}
+                className="px-4 py-2 rounded-xl flex items-center gap-2 font-medium text-red-600 bg-gradient-to-r from-red-100 to-red-200"
+              >
+                <ArrowRight className="w-4 h-4 rotate-180" />
+                Logout
+              </motion.button>
+            )}
           </div>
 
-          {/* RIGHT — MOBILE + TABLET MENU BUTTON (below lg) */}
+          {/* ================= MOBILE MENU BUTTON ================= */}
           <button
             className="lg:hidden p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
             onClick={() => setOpen(true)}
           >
             <Menu className="h-7 w-7 text-slate-800 dark:text-slate-200" />
           </button>
-
         </div>
       </nav>
 
-      {/* MOBILE/TABLET DRAWER */}
+      {/* ================= MOBILE DRAWER ================= */}
       <AnimatePresence>
         {open && (
           <>
@@ -114,29 +182,27 @@ export default function Navbar() {
 
             {/* DRAWER */}
             <motion.aside
-              className="fixed top-0 left-0 w-72 h-full bg-white dark:bg-slate-900 shadow-xl z-50 p-6"
-              initial={{ x: -300 }}
+              className="fixed top-0 right-0 w-72 h-full bg-white dark:bg-slate-900 shadow-xl z-50 p-6"
+              initial={{ x: 300 }}
               animate={{ x: 0 }}
-              exit={{ x: -300 }}
+              exit={{ x: 300 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              {/* CLOSE HEADER */}
-              <div className="flex items-center justify-between mb-8">
-                <Logo />
+              {/* HEADER */}
+              <div className="flex items-start justify-between mb-8 gap-3">
+                <Logo showFullOnMobile className="items-center text-center" />
                 <button
                   onClick={() => setOpen(false)}
                   className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <X className="h-6 w-6 text-slate-800 dark:text-slate-200" />
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 
-              {/* MENU ITEMS - COLORFUL */}
+              {/* MENU ITEMS */}
               <div className="flex flex-col gap-4">
                 {navItems.map((item) => {
                   const Icon = item.Icon;
-                  const isActive = active === item.id;
-
                   return (
                     <button
                       key={item.id}
@@ -145,18 +211,39 @@ export default function Navbar() {
                         setOpen(false);
                         router.push(item.path);
                       }}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-lg transition
-                        ${isActive
-                          ? `text-white bg-gradient-to-r ${item.gradient} shadow-md`
-                          : "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }
-                      `}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       <Icon className="h-5 w-5" />
                       {item.label}
                     </button>
                   );
                 })}
+
+                {/* -------- AUTH BUTTON (MOBILE) -------- */}
+                {!user ? (
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                       openLogin();
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    Login
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      setOpen(false);
+                      router.replace("/");
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg text-red-600"
+                  >
+                    <ArrowRight className="h-5 w-5 rotate-180" />
+                    Logout
+                  </button>
+                )}
               </div>
             </motion.aside>
           </>

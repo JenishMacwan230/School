@@ -116,7 +116,26 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Pointer cursor for interactive elements */
+  button,
+  a {
+    cursor: pointer;
+  }
+
+  /* Optional: elements that behave like buttons */
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  /* Optional: disabled state */
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
+
