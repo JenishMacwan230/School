@@ -56,11 +56,12 @@ app.use("/api/campus", campusRouter);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/sports", sportsRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/upload", uploadRoutes);
+
 
 app.get("/health", (_req, res) => {
   res.json({ status: "OK" });
 });
-app.use("/api/upload", uploadRoutes);
 /* ================= START SERVER ================= */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
