@@ -60,10 +60,9 @@ const Login3: React.FC = () => {
     setLoading(true);
 
     try {
-      await apiFetch("/auth/login", {
+      await apiFetch("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
-        credentials: "include",
       });
 
       await fetchUser();
@@ -130,7 +129,7 @@ const Login3: React.FC = () => {
               type="submit"
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl disabled:opacity-60"
-        
+
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>

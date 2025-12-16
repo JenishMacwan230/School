@@ -1,6 +1,6 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
+  process.env.NEXT_PUBLIC_API_URL || "https://school-cntx.onrender.com";
+  
 export async function apiFetch<T = any>(
   path: string,
   options: RequestInit = {}
