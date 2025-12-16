@@ -22,7 +22,7 @@ import galleryRoutes from "./routes/gallery";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 /* ================= MIDDLEWARE ================= */
 app.use(
@@ -59,9 +59,16 @@ app.use("/api/gallery", galleryRoutes);
 app.use("/api/upload", uploadRoutes);
 
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "OK" });
+// ✅ Health check route (ADD THIS)
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "school-backend",
+    uptime: process.uptime(),
+    time: new Date().toISOString(),
+  });
 });
+
 /* ================= START SERVER ================= */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
