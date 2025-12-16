@@ -7,6 +7,17 @@ import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
 import otpRoutes from "./routes/otp";
 import adminPasswordRoutes from "./routes/adminPassword";
+import testDbRoute from "./routes/test-db";
+import teachersRoutes from "./routes/teachers";
+import uploadRoutes from "./routes/upload";
+import studentsRoutes from "./routes/students";
+import aboutRoutes from "./routes/about";
+import campusRouter from "./routes/campus";
+import alumniRoutes from "./routes/alumni";
+import sportsRoutes from "./routes/sports";
+import galleryRoutes from "./routes/gallery";
+
+
 
 dotenv.config();
 
@@ -20,6 +31,10 @@ app.use(
     credentials: true, // 🔥 REQUIRED for cookies
   })
 );
+// console.log("AUTH ROUTES LOADED");
+
+
+app.use("/api/test-db", testDbRoute);
 
 app.use(express.json());
 app.use(cookieParser()); // 🔥 REQUIRED
@@ -29,11 +44,18 @@ app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/admin", adminPasswordRoutes);
 app.use("/otp", otpRoutes);
+app.use("/api/about", aboutRoutes);
+app.use("/api/teachers", teachersRoutes);
+app.use("/api/students", studentsRoutes);
+app.use("/api/campus", campusRouter);
+app.use("/api/alumni", alumniRoutes);
+app.use("/api/sports", sportsRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "OK" });
 });
-
+app.use("/api/upload", uploadRoutes);
 /* ================= START SERVER ================= */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

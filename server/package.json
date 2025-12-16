@@ -6,11 +6,14 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.16.3"
   },
   "devDependencies": {
@@ -19,6 +22,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^20.19.26",
     "@types/pg": "^8.16.0",
     "ts-node-dev": "^2.0.0"

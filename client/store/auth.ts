@@ -3,7 +3,7 @@ import { apiFetch } from '@/lib/api';
 
 type User = {
   id: string;
-  role: string;
+  role: "SUPER_ADMIN" | "USER";
 };
 
 type AuthState = {

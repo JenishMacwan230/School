@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import AboutClient from "./AboutClient";
+import StudentsPage from "./students";
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "Our students ",
   description:
     "Learn about R. N. Naik Sarvajanik High School, our trust, history, and management.",
 };
 
-export default function AboutPage() {
-  return <AboutClient />;
+export default function student() {
+  return <StudentsPage />;
 }

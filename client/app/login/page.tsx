@@ -68,7 +68,7 @@ const Login3: React.FC = () => {
 
       await fetchUser();
       closeLogin();
-      router.replace("/");
+      // router.replace("/");
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -130,6 +130,7 @@ const Login3: React.FC = () => {
               type="submit"
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl disabled:opacity-60"
+        
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>

@@ -12,10 +12,11 @@ import {
   LogIn,
   ArrowRight,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { useAuthStore } from "@/store/auth";
+
 
 /* ---------------- NAV ITEMS (STATIC) ---------------- */
 const navItems = [
@@ -53,10 +54,11 @@ export default function Navbar() {
   const router = useRouter();
   const { user, openLogin, logout } = useAuthStore();
 
-  
+
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState("school");
+  // const [active, setActive] = useState("school");
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
 
   /* ---------------- SCROLL EFFECT ---------------- */
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function Navbar() {
           className={cn(
             "max-w-7xl  h-20 mx-auto mt-2 flex items-center justify-between px-4 transition-all duration-300",
             isScrolled &&
-              "bg-background/60 max-w-6xl rounded-2xl border backdrop-blur-lg lg:px-5"
+            "bg-background/60 max-w-6xl rounded-2xl border backdrop-blur-lg lg:px-5"
           )}
         >
           {/* LOGO */}
@@ -97,15 +99,17 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => {
               const Icon = item.Icon;
-              const isActive = active === item.id;
+              const isActive =
+                item.path === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.path);
+
 
               return (
                 <motion.button
                   key={item.id}
-                  onClick={() => {
-                    setActive(item.id);
-                    router.push(item.path);
-                  }}
+                  onClick={() => router.push(item.path)}
+
                   whileHover={{ scale: 1.05 }}
                   className={cn(
                     "relative px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition",
@@ -137,7 +141,7 @@ export default function Navbar() {
               <motion.button
                 onClick={openLogin}
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-2 rounded-xl flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 bg-gradient-to-r from-blue-400 to-purple-400 text-white"
+                className="px-4 py-2 rounded-xl flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 "
               >
                 <LogIn className="w-4 h-4" />
                 Login
@@ -146,7 +150,6 @@ export default function Navbar() {
               <motion.button
                 onClick={async () => {
                   await logout();
-                  router.replace("/");
                 }}
                 whileHover={{ scale: 1.05 }}
                 className="px-4 py-2 rounded-xl flex items-center gap-2 font-medium text-red-600 bg-gradient-to-r from-red-100 to-red-200"
@@ -203,15 +206,25 @@ export default function Navbar() {
               <div className="flex flex-col gap-4">
                 {navItems.map((item) => {
                   const Icon = item.Icon;
+
+                  const isActive =
+                    item.path === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(item.path);
+
                   return (
                     <button
                       key={item.id}
                       onClick={() => {
-                        setActive(item.id);
                         setOpen(false);
                         router.push(item.path);
                       }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-lg transition",
+                        isActive
+                          ? "bg-gradient-to-r text-white shadow-md " + item.gradient
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
                     >
                       <Icon className="h-5 w-5" />
                       {item.label}
@@ -219,12 +232,13 @@ export default function Navbar() {
                   );
                 })}
 
+
                 {/* -------- AUTH BUTTON (MOBILE) -------- */}
                 {!user ? (
                   <button
                     onClick={() => {
                       setOpen(false);
-                       openLogin();
+                      openLogin();
                     }}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg"
                   >

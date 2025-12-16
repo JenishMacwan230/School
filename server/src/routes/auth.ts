@@ -7,7 +7,6 @@ const router = Router();
 
 /**
  * POST /auth/login
- * body: { email, password }
  */
 router.post("/login", async (req, res) => {
   try {
@@ -39,16 +38,14 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // 🔑 SET COOKIE (THIS IS THE KEY CHANGE)
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.json({
-      message: "Login successful",
       user: {
         id: user.id,
         email: user.email,
@@ -61,7 +58,9 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
+/**
+ * GET /auth/me
+ */
 router.get("/me", (req, res) => {
   const token = req.cookies?.token;
 
@@ -73,7 +72,7 @@ router.get("/me", (req, res) => {
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    ) as { userId: number; role: string };
+    ) as { userId: string; role: string };
 
     res.json({
       user: {
@@ -86,16 +85,17 @@ router.get("/me", (req, res) => {
   }
 });
 
+/**
+ * POST /auth/logout
+ */
 router.post("/logout", (_req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     sameSite: "lax",
-    secure: false, // true in production (https)
+    secure: false,
   });
 
   res.json({ message: "Logged out successfully" });
 });
-
-
 
 export default router;

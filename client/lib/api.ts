@@ -1,30 +1,36 @@
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export async function apiFetch(
+export async function apiFetch<T = any>(
   path: string,
   options: RequestInit = {}
-) {
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
-
+): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
     ...options,
-    headers,
   });
 
-  const data = await res.json();
+  const text = await res.text();
 
-  if (!res.ok) {
-    throw new Error(data.message || "API Error");
+  // 👇 SAFETY LOG (remove later)
+  console.log("API RESPONSE:", path, text);
+
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Invalid JSON from ${path}`);
+    }
   }
 
-  return data;
+  if (!res.ok) {
+    throw new Error(data?.message || "API Error");
+  }
+
+  return data as T;
 }

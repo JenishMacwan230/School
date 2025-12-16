@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const backgrounds = [
   "one.avif",
@@ -22,6 +23,7 @@ export default function Hero() {
     return () => clearInterval(interval);
   }, []);
 
+  const router = useRouter();
   return (
     <section className="relative h-screen overflow-hidden pt-30">
       {/* 🔹 Sliding background images */}
@@ -59,18 +61,20 @@ export default function Hero() {
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Button
             size="lg"
-            className="bg-white text-slate-900 hover:bg-white/90"
+            className="bg-gradient-to-r from-teal-600 to-cyan-600 text-slate-900 hover:font-bold"
+             onClick={() => router.push("/campus")}
           >
-            Explore School
+            Explore School Campus
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
 
           <Button
             size="lg"
             variant="outline"
-            className="border-white text-slate-900 hover:bg-white hover:text-slate-900"
+            className="border-white text-slate-900 hover:bg-white hover:text-slate-900 hover:font-bold"
+            onClick={() => router.push("/admission")}
           >
-            Contact Us
+            Admission Inquiry
           </Button>
         </div>
       </div>
