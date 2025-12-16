@@ -27,10 +27,15 @@ const PORT = process.env.PORT || 5000;
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "http://localhost:3000",
-    credentials: true, // 🔥 REQUIRED for cookies
+    origin: [
+      "http://localhost:3000",
+      process.env.FRONTEND_URL,
+    ].filter(Boolean) as string[],
+    credentials: true,
   })
 );
+
+
 // console.log("AUTH ROUTES LOADED");
 
 
