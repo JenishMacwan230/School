@@ -40,10 +40,11 @@ router.post("/login", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none", // 🔥 REQUIRED for cross-domain
+      secure: true,     // 🔥 REQUIRED on HTTPS
       maxAge: 24 * 60 * 60 * 1000,
     });
+
 
     res.json({
       user: {
@@ -91,9 +92,10 @@ router.get("/me", (req, res) => {
 router.post("/logout", (_req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false,
+    sameSite: "none",
+    secure: true,
   });
+
 
   res.json({ message: "Logged out successfully" });
 });

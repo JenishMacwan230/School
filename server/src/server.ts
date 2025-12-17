@@ -27,15 +27,11 @@ const PORT = process.env.PORT || 10000;
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://rnnaikshighschool.vercel.app", // 👈 ADD THIS
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: true,        // 🔥 allow current request origin
+    credentials: true,   // 🔥 allow cookies
   })
 );
+
 
 
 
@@ -50,9 +46,9 @@ app.use(cookieParser()); // 🔥 REQUIRED
 /* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
 
-app.use("/admin", adminRoutes);
-app.use("/admin", adminPasswordRoutes);
-app.use("/otp", otpRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminPasswordRoutes);
+app.use("/api/otp", otpRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/teachers", teachersRoutes);
 app.use("/api/students", studentsRoutes);
