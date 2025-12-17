@@ -60,9 +60,10 @@ export default function SportsPage() {
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   const [errors, setErrors] = useState<{ title?: string }>({});
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
-
 
   /* ================= FETCH ================= */
 
@@ -181,6 +182,7 @@ export default function SportsPage() {
           title="Outdoor Sports"
           sports={outdoor}
           isAdmin={isAdmin}
+          deletingId={deletingId}
           onEdit={(s) => {
             setEditing(s);
             setDraft({
@@ -193,8 +195,14 @@ export default function SportsPage() {
             setOpen(true);
           }}
           onDelete={async (id) => {
-            await apiFetch(`/api/sports/${id}`, { method: "DELETE" });
-            setSports((p) => p.filter((x) => x.id !== id));
+            if (!confirm("Are you sure you want to delete this sport?")) return;
+            try {
+              setDeletingId(id);
+              await apiFetch(`/api/sports/${id}`, { method: "DELETE" });
+              setSports((p) => p.filter((x) => x.id !== id));
+            } finally {
+              setDeletingId(null);
+            }
           }}
         />
 
@@ -205,6 +213,7 @@ export default function SportsPage() {
           title="Indoor Sports"
           sports={indoor}
           isAdmin={isAdmin}
+          deletingId={deletingId}
           onEdit={(s) => {
             setEditing(s);
             setDraft({
@@ -217,8 +226,14 @@ export default function SportsPage() {
             setOpen(true);
           }}
           onDelete={async (id) => {
-            await apiFetch(`/api/sports/${id}`, { method: "DELETE" });
-            setSports((p) => p.filter((x) => x.id !== id));
+            if (!confirm("Are you sure you want to delete this sport?")) return;
+            try {
+              setDeletingId(id);
+              await apiFetch(`/api/sports/${id}`, { method: "DELETE" });
+              setSports((p) => p.filter((x) => x.id !== id));
+            } finally {
+              setDeletingId(null);
+            }
           }}
         />
 
@@ -249,8 +264,6 @@ export default function SportsPage() {
                   });
 
                   setGallery((p) => [...p, created]);
-
-                  // allow uploading same image again
                   e.target.value = "";
                 }}
               />
@@ -264,12 +277,11 @@ export default function SportsPage() {
             </div>
           )}
 
-
-
           <MasonryGallery
             images={gallery}
             isAdmin={isAdmin}
             onDelete={async (id) => {
+              if (!confirm("Delete this image?")) return;
               await apiFetch(`/api/gallery/${id}`, { method: "DELETE" });
               setGallery((p) => p.filter((x) => x.id !== id));
             }}
@@ -305,6 +317,28 @@ export default function SportsPage() {
             {errors.title && (
               <p className="text-sm text-red-500">{errors.title}</p>
             )}
+
+            {/* CATEGORY SELECTOR (NEW) */}
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant={draft.category === "OUTDOOR" ? "default" : "outline"}
+                onClick={() =>
+                  setDraft({ ...draft, category: "OUTDOOR" })
+                }
+              >
+                Outdoor
+              </Button>
+              <Button
+                type="button"
+                variant={draft.category === "INDOOR" ? "default" : "outline"}
+                onClick={() =>
+                  setDraft({ ...draft, category: "INDOOR" })
+                }
+              >
+                Indoor
+              </Button>
+            </div>
 
             {/* IMAGE PREVIEW */}
             <div className="flex justify-center">
@@ -346,12 +380,14 @@ function SportSection({
   title,
   sports,
   isAdmin,
+  deletingId,
   onEdit,
   onDelete,
 }: {
   title: string;
   sports: Sport[];
   isAdmin: boolean;
+  deletingId: number | null;
   onEdit: (s: Sport) => void;
   onDelete: (id: number) => void;
 }) {
@@ -363,8 +399,17 @@ function SportSection({
           <Card key={s.id} className="relative">
             {isAdmin && (
               <div className="absolute top-2 right-2 flex gap-2 z-10">
-                <Button size="icon" variant="ghost" onClick={() => onEdit(s)}>✏️</Button>
-                <Button size="icon" variant="ghost" onClick={() => onDelete(s.id)}>🗑</Button>
+                <Button size="icon" variant="ghost" onClick={() => onEdit(s)}>
+                  ✏️
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  disabled={deletingId === s.id}
+                  onClick={() => onDelete(s.id)}
+                >
+                  {deletingId === s.id ? "⏳" : "🗑"}
+                </Button>
               </div>
             )}
 

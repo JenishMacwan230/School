@@ -39,8 +39,7 @@ export default function AlumniPage() {
   const [editing, setEditing] = useState<Alumni | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-
-  
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const [draft, setDraft] = useState({
     name: "",
@@ -49,9 +48,6 @@ export default function AlumniPage() {
     achievement: "",
     image: "",
   });
-
-
-  
 
   /* ===== FETCH ===== */
   useEffect(() => {
@@ -63,61 +59,74 @@ export default function AlumniPage() {
     const fd = new FormData();
     fd.append("image", file);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload/student-image`, {
-      method: "POST",
-      credentials: "include",
-      body: fd,
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/upload/student-image`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      }
+    );
 
     if (!res.ok) throw new Error("Image upload failed");
     return res.json(); // { url }
   };
 
   /* ===== SAVE ===== */
- const saveAlumni = async () => {
-  // ✅ VALIDATION — ADD THIS AT THE TOP
-  if (!draft.name || !draft.batch || !draft.profession) {
-    alert("Name, Batch and Profession are required");
-    return;
-  }
+  const saveAlumni = async () => {
+    if (!draft.name || !draft.batch || !draft.profession) {
+      alert("Name, Batch and Profession are required");
+      return;
+    }
 
-  const payload = {
-    ...draft,
-    image: draft.image || "/user.jpg", // default image
+    try {
+      setSaving(true);
+
+      let imageUrl = draft.image || "/user.jpg";
+
+      // 🔥 FIX: actually upload image
+      if (imageFile) {
+        const uploaded = await uploadImage(imageFile);
+        imageUrl = uploaded.url;
+      }
+
+      const payload = { ...draft, image: imageUrl };
+
+      if (editing) {
+        await apiFetch(`/api/alumni/${editing.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+
+        setAlumni((prev) =>
+          prev.map((a) =>
+            a.id === editing.id ? { ...a, ...payload } : a
+          )
+        );
+      } else {
+        const created = await apiFetch("/api/alumni", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        setAlumni((prev) => [created, ...prev]);
+      }
+
+      // reset
+      setOpen(false);
+      setEditing(null);
+      setDraft({
+        name: "",
+        batch: "",
+        profession: "",
+        achievement: "",
+        image: "",
+      });
+      setImageFile(null);
+    } finally {
+      setSaving(false);
+    }
   };
-
-  if (editing) {
-    await apiFetch(`/api/alumni/${editing.id}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
-
-    setAlumni((prev) =>
-      prev.map((a) =>
-        a.id === editing.id ? { ...a, ...payload } : a
-      )
-    );
-  } else {
-    const created = await apiFetch("/api/alumni", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    setAlumni((prev) => [created, ...prev]);
-  }
-
-  // reset
-  setOpen(false);
-  setEditing(null);
-  setDraft({
-    name: "",
-    batch: "",
-    profession: "",
-    achievement: "",
-    image: "",
-  });
-};
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-32 pb-24 space-y-12">
@@ -154,25 +163,33 @@ export default function AlumniPage() {
                       achievement: a.achievement ?? "",
                       image: a.image ?? "",
                     });
-
+                    setImageFile(null);
                     setOpen(true);
                   }}
                 >
                   ✏️
                 </Button>
+
                 <Button
                   size="icon"
                   variant="ghost"
+                  disabled={deletingId === a.id}
                   onClick={async () => {
-                    await apiFetch(`/api/alumni/${a.id}`, {
-                      method: "DELETE",
-                    });
-                    setAlumni((p) =>
-                      p.filter((x) => x.id !== a.id)
-                    );
+                    if (!confirm("Delete this alumni?")) return;
+                    try {
+                      setDeletingId(a.id);
+                      await apiFetch(`/api/alumni/${a.id}`, {
+                        method: "DELETE",
+                      });
+                      setAlumni((p) =>
+                        p.filter((x) => x.id !== a.id)
+                      );
+                    } finally {
+                      setDeletingId(null);
+                    }
                   }}
                 >
-                  🗑
+                  {deletingId === a.id ? "⏳" : "🗑"}
                 </Button>
               </div>
             )}
@@ -209,19 +226,16 @@ export default function AlumniPage() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* IMAGE UPLOAD */}
+          {/* IMAGE PREVIEW */}
           <label className="cursor-pointer flex justify-center">
-            {imageFile ? (
-              <img
-                src={URL.createObjectURL(imageFile)}
-                className="h-28 w-28 rounded-full object-cover border"
-              />
-            ) : (
-              <img
-                src={draft.image || "/user.jpg"}
-                className="h-28 w-28 rounded-full object-cover border"
-              />
-            )}
+            <img
+              src={
+                imageFile
+                  ? URL.createObjectURL(imageFile)
+                  : draft.image || "/user.jpg"
+              }
+              className="h-28 w-28 rounded-full object-cover border"
+            />
 
             <Input
               type="file"

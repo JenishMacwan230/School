@@ -83,7 +83,11 @@ export default function TeachersPage() {
     const nameRegex = /^[A-Za-z\s]{2,50}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[6-9]\d{9}$/; // Indian 10-digit numbers
-    
+    // 🔵 ADD — loaders to prevent double submit
+    const [savingTeacher, setSavingTeacher] = useState(false);
+    const [deletingTeacherId, setDeletingTeacherId] = useState<string | null>(null);
+
+
 
 
 
@@ -809,9 +813,15 @@ export default function TeachersPage() {
 
                             {/* SAVE */}
                             <Button
-                                disabled={uploadingImage}
+                                disabled={uploadingImage || savingTeacher}
                                 onClick={async () => {
-                                    if (!validateTeacher(editTeacher)) return;
+                                    if (savingTeacher) return;
+                                    setSavingTeacher(true);
+
+                                    if (!validateTeacher(editTeacher)) {
+                                        setSavingTeacher(false); // ✅ IMPORTANT
+                                        return;
+                                    }
 
                                     try {
                                         let photoUrl = editTeacher.photo;
@@ -847,7 +857,9 @@ export default function TeachersPage() {
                                                 }
                                             );
                                             setTeacherList((prev) =>
-                                                prev.map((t) => (t.id === savedTeacher.id ? savedTeacher : t))
+                                                prev.map((t) =>
+                                                    t.id === savedTeacher.id ? savedTeacher : t
+                                                )
                                             );
                                         }
 
@@ -856,11 +868,17 @@ export default function TeachersPage() {
                                         setErrors({});
                                     } finally {
                                         setUploadingImage(false);
+                                        setSavingTeacher(false); // ✅ FIX
                                     }
                                 }}
                             >
-                                {editTeacher.id ? "Save Changes" : "Add Teacher"}
+                                {savingTeacher
+                                    ? "Saving..."
+                                    : editTeacher.id
+                                        ? "Save Changes"
+                                        : "Add Teacher"}
                             </Button>
+
 
                         </div>
                     </DialogContent>
