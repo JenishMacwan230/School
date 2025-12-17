@@ -38,15 +38,17 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    // ✅ COOKIE (for browser + legacy)
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none", // 🔥 REQUIRED for cross-domain
-      secure: true,     // 🔥 REQUIRED on HTTPS
+      sameSite: "none",
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-
+    // ✅ ALSO RETURN TOKEN (for Bearer auth)
     res.json({
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -54,16 +56,28 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 /**
  * GET /auth/me
+ * ✅ Supports BOTH cookie + Bearer token
  */
 router.get("/me", (req, res) => {
-  const token = req.cookies?.token;
+  let token: string | undefined;
+
+  // 1️⃣ Try Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // 2️⃣ Fallback to cookie
+  if (!token) {
+    token = req.cookies?.token;
+  }
 
   if (!token) {
     return res.json({ user: null });
@@ -95,7 +109,6 @@ router.post("/logout", (_req, res) => {
     sameSite: "none",
     secure: true,
   });
-
 
   res.json({ message: "Logged out successfully" });
 });
