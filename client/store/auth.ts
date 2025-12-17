@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   fetchUser: async () => {
     try {
-      const data = await apiFetch("/auth/me", { credentials: "include" });
+      const data = await apiFetch("/api/auth/me");
       set({ user: data.user, loading: false });
     } catch {
       set({ user: null, loading: false });
@@ -34,7 +34,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await apiFetch("/auth/logout", { method: "POST", credentials: "include" });
+    await apiFetch("/api/auth/logout", { method: "POST" });
     set({ user: null });
   },
+
 }));
