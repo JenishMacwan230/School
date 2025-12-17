@@ -27,13 +27,11 @@ const PORT = process.env.PORT || 10000;
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://your-frontend.onrender.com",
-    ],
+    origin: "https://school-cntx.onrender.com", // 👈 YOUR FRONTEND
     credentials: true,
   })
 );
+
 
 
 
