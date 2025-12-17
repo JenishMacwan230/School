@@ -1,14 +1,13 @@
 import { Router } from "express";
 import { pool } from "../db";
 import cloudinary from "../lib/cloudinary";
-import jwt from "jsonwebtoken";
+import { requireSuperAdmin } from "../middleware/authMiddleware";
 
 const router = Router();
 
-
 /**
  * POST /api/teachers
- * Create new teacher (SUPER_ADMIN)
+ * Create teacher (SUPER_ADMIN)
  */
 router.post("/", requireSuperAdmin, async (req, res) => {
   const {
@@ -26,11 +25,16 @@ router.post("/", requireSuperAdmin, async (req, res) => {
     phone,
   } = req.body;
 
+  // ✅ REQUIRED FIELD VALIDATION
+  if (!name || !subject || !role || !schoolClass || !email) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
   try {
     const result = await pool.query(
       `
       INSERT INTO teachers (
-        name, subject, role, class, stream,
+        name, subject, role, "class", stream,
         experience, qualification, bio,
         photo, photo_public_id, email, phone
       )
@@ -42,59 +46,43 @@ router.post("/", requireSuperAdmin, async (req, res) => {
         subject,
         role,
         schoolClass,
-        stream,
-        experience,
-        qualification,
-        bio,
-        photo,
-        photo_public_id,
+        stream || null,
+        experience || null,
+        qualification || null,
+        bio || null,
+        photo || null,
+        photo_public_id || null,
         email,
-        phone,
+        phone || null,
       ]
     );
 
     res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to create teacher" });
+  } catch (err: any) {
+    console.error("CREATE TEACHER ERROR:", err.message);
+    res.status(500).json({
+      message: "Failed to create teacher",
+      error: err.message,
+    });
   }
 });
 
 /**
  * GET /api/teachers
- * Public – fetch all teachers
+ * Public
  */
 router.get("/", async (_req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM teachers ORDER BY name ASC"
+      `SELECT * FROM teachers ORDER BY name ASC`
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error("FETCH TEACHERS ERROR:", err.message);
     res.status(500).json({ message: "Failed to fetch teachers" });
   }
 });
 
-
-/* ================= AUTH ================= */
-function requireSuperAdmin(req: any, res: any, next: any) {
-  const token = req.cookies?.token;
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-  const decoded = jwt.verify(
-    token,
-    process.env.JWT_SECRET as string
-  ) as { role: string };
-
-  if (decoded.role !== "SUPER_ADMIN") {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-
-  next();
-}
-
-/* ================= UPDATE TEACHER ================= */
 /**
  * PUT /api/teachers/:id
  */
@@ -117,15 +105,15 @@ router.put("/:id", requireSuperAdmin, async (req, res) => {
   } = req.body;
 
   try {
-    // 1️⃣ Get old image public_id
+    // 1️⃣ Get old image
     const old = await pool.query(
-      "SELECT photo_public_id FROM teachers WHERE id = $1",
+      `SELECT photo_public_id FROM teachers WHERE id = $1`,
       [id]
     );
 
     const oldPublicId = old.rows[0]?.photo_public_id;
 
-    // 2️⃣ Delete old image if replaced
+    // 2️⃣ Delete old Cloudinary image
     if (oldPublicId && oldPublicId !== photo_public_id) {
       await cloudinary.uploader.destroy(oldPublicId);
     }
@@ -137,7 +125,7 @@ router.put("/:id", requireSuperAdmin, async (req, res) => {
         name = $1,
         subject = $2,
         role = $3,
-        class = $4,
+        "class" = $4,
         stream = $5,
         experience = $6,
         qualification = $7,
@@ -154,26 +142,27 @@ router.put("/:id", requireSuperAdmin, async (req, res) => {
         subject,
         role,
         schoolClass,
-        stream,
-        experience,
-        qualification,
-        bio,
-        photo,
-        photo_public_id,
+        stream || null,
+        experience || null,
+        qualification || null,
+        bio || null,
+        photo || null,
+        photo_public_id || null,
         email,
-        phone,
+        phone || null,
         id,
       ]
     );
 
     res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to update teacher" });
+  } catch (err: any) {
+    console.error("UPDATE TEACHER ERROR:", err.message);
+    res.status(500).json({
+      message: "Failed to update teacher",
+      error: err.message,
+    });
   }
 });
-
-
 
 /**
  * DELETE /api/teachers/:id
@@ -182,28 +171,27 @@ router.delete("/:id", requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
-    // 1️⃣ Get image public_id
     const result = await pool.query(
-      "SELECT photo_public_id FROM teachers WHERE id = $1",
+      `SELECT photo_public_id FROM teachers WHERE id = $1`,
       [id]
     );
 
     const publicId = result.rows[0]?.photo_public_id;
 
-    // 2️⃣ Delete image from Cloudinary
     if (publicId) {
       await cloudinary.uploader.destroy(publicId);
     }
 
-    // 3️⃣ Delete from DB
-    await pool.query("DELETE FROM teachers WHERE id = $1", [id]);
+    await pool.query(`DELETE FROM teachers WHERE id = $1`, [id]);
 
     res.json({ message: "Teacher deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to delete teacher" });
+  } catch (err: any) {
+    console.error("DELETE TEACHER ERROR:", err.message);
+    res.status(500).json({
+      message: "Failed to delete teacher",
+      error: err.message,
+    });
   }
 });
-
 
 export default router;

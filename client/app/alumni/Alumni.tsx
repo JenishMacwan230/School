@@ -83,7 +83,7 @@ export default function AlumniPage() {
 
   const payload = {
     ...draft,
-    image: draft.image || "/user.png", // default image
+    image: draft.image || "/user.jpg", // default image
   };
 
   if (editing) {
@@ -180,7 +180,7 @@ export default function AlumniPage() {
             <CardHeader>
               <div className="relative w-28 h-28 mx-auto rounded-full overflow-hidden">
                 <Image
-                  src={a.image || "/user.png"}
+                  src={a.image || "/user.jpg"}
                   alt={a.name}
                   fill
                   className="object-cover"
@@ -218,7 +218,7 @@ export default function AlumniPage() {
               />
             ) : (
               <img
-                src={draft.image || "/user.png"}
+                src={draft.image || "/user.jpg"}
                 className="h-28 w-28 rounded-full object-cover border"
               />
             )}
