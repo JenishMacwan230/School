@@ -111,7 +111,7 @@ export default function AboutPage() {
     fd.append("image", file);
 
     const res = await fetch(
-      "http://localhost:5000/api/upload/trustee-photo",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/upload/trustee-photo`,
       {
         method: "POST",
         credentials: "include",
