@@ -39,10 +39,12 @@ router.post("/login", async (req, res) => {
     );
 
     // ✅ COOKIE (for browser + legacy)
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       maxAge: 24 * 60 * 60 * 1000,
     });
 

@@ -27,10 +27,14 @@ const PORT = process.env.PORT || 10000;
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: true,        // 🔥 allow current request origin
-    credentials: true,   // 🔥 allow cookies
+    origin: [
+      "http://localhost:3000",
+      "https://your-frontend.onrender.com",
+    ],
+    credentials: true,
   })
 );
+
 
 
 
