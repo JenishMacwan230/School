@@ -111,24 +111,31 @@ export default function TeachersPage() {
     const validateTeacher = (teacher: Teacher) => {
         const newErrors: Record<string, string> = {};
 
-        // NAME (required)
+        // ✅ NAME (required)
         if (!teacher.name.trim()) {
             newErrors.name = "Name is required";
         } else if (!nameRegex.test(teacher.name)) {
             newErrors.name = "Name must contain only letters";
         }
 
-        // SUBJECT (required)
+        // ✅ SUBJECT (required)
         if (!teacher.subject.trim()) {
             newErrors.subject = "Subject is required";
         }
 
-        // EMAIL (optional but validated)
+        // ✅ QUALIFICATION (required)
+        if (!teacher.qualification.trim()) {
+            newErrors.qualification = "Qualification is required";
+        }
+
+        // 🔹 EXPERIENCE (optional, TEXT → no regex, no validation)
+
+        // 🔹 EMAIL (optional but validated if present)
         if (teacher.email && !emailRegex.test(teacher.email)) {
             newErrors.email = "Invalid email format";
         }
 
-        // PHONE (optional but validated)
+        // 🔹 PHONE (optional but validated if present)
         if (teacher.phone && !phoneRegex.test(teacher.phone)) {
             newErrors.phone = "Invalid mobile number";
         }
@@ -136,6 +143,7 @@ export default function TeachersPage() {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
 
     const filteredTeachers = useMemo(() => {
         return teacherList.filter((t) => {
@@ -772,6 +780,7 @@ export default function TeachersPage() {
                                     setEditTeacher({ ...editTeacher, qualification: e.target.value })
                                 }
                                 placeholder="Qualification"
+                                
                             />
 
                             {/* EMAIL */}
