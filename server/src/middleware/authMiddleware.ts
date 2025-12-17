@@ -12,27 +12,35 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    // 1️⃣ Authorization header (optional)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
     }
 
-    const token = authHeader.split(" ")[1];
+    // 2️⃣ Cookie fallback (MAIN)
+    if (!token) {
+      token = req.cookies?.token;
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
 
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string
     ) as JwtPayload;
 
-    // ✅ attach user safely
     (req as any).user = decoded;
-
     next();
-  } catch (err) {
+  } catch {
     return res.status(403).json({ message: "Invalid or expired token" });
   }
 };
+
 
 export const requireSuperAdmin = (
   req: Request,
