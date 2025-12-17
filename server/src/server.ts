@@ -27,12 +27,13 @@ const PORT = process.env.PORT || 10000;
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "https://school-cntx.onrender.com", // EXACT frontend URL
+    origin: "https://rnnaikshighschool.vercel.app", // ✅ FRONTEND
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 
 
