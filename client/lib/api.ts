@@ -1,22 +1,28 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://school-cntx.onrender.com";
-  
+
 export async function apiFetch<T = any>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // 🔑 Get JWT token (stored after login)
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   const text = await res.text();
 
-  // 👇 SAFETY LOG (remove later)
+  // 👇 Debug log (safe to keep for now)
   console.log("API RESPONSE:", path, text);
 
   let data: any = null;
