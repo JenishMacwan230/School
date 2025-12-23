@@ -64,13 +64,34 @@ export default function SportsPage() {
 
   const [errors, setErrors] = useState<{ title?: string }>({});
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const [sportsLoading, setSportsLoading] = useState(true);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+
 
   /* ================= FETCH ================= */
 
   useEffect(() => {
-    apiFetch("/api/sports").then(setSports);
-    apiFetch("/api/gallery").then(setGallery);
+    const fetchData = async () => {
+      try {
+        setSportsLoading(true);
+        setGalleryLoading(true);
+
+        const [sportsData, galleryData] = await Promise.all([
+          apiFetch("/api/sports"),
+          apiFetch("/api/gallery"),
+        ]);
+
+        setSports(sportsData);
+        setGallery(galleryData);
+      } finally {
+        setSportsLoading(false);
+        setGalleryLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
 
   /* ================= IMAGE UPLOAD ================= */
 
@@ -181,6 +202,7 @@ export default function SportsPage() {
         <SportSection
           title="Outdoor Sports"
           sports={outdoor}
+          loading={sportsLoading} // 👈
           isAdmin={isAdmin}
           deletingId={deletingId}
           onEdit={(s) => {
@@ -212,6 +234,7 @@ export default function SportsPage() {
         <SportSection
           title="Indoor Sports"
           sports={indoor}
+          loading={sportsLoading} // 👈
           isAdmin={isAdmin}
           deletingId={deletingId}
           onEdit={(s) => {
@@ -277,15 +300,27 @@ export default function SportsPage() {
             </div>
           )}
 
-          <MasonryGallery
-            images={gallery}
-            isAdmin={isAdmin}
-            onDelete={async (id) => {
-              if (!confirm("Delete this image?")) return;
-              await apiFetch(`/api/gallery/${id}`, { method: "DELETE" });
-              setGallery((p) => p.filter((x) => x.id !== id));
-            }}
-          />
+          {galleryLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 animate-pulse">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-40 bg-muted rounded-lg"
+                />
+              ))}
+            </div>
+          ) : (
+            <MasonryGallery
+              images={gallery}
+              isAdmin={isAdmin}
+              onDelete={async (id) => {
+                if (!confirm("Delete this image?")) return;
+                await apiFetch(`/api/gallery/${id}`, { method: "DELETE" });
+                setGallery((p) => p.filter((x) => x.id !== id));
+              }}
+            />
+          )}
+
         </section>
 
         <Separator />
@@ -383,6 +418,7 @@ function SportSection({
   deletingId,
   onEdit,
   onDelete,
+  loading, // 👈 add this
 }: {
   title: string;
   sports: Sport[];
@@ -390,50 +426,63 @@ function SportSection({
   deletingId: number | null;
   onEdit: (s: Sport) => void;
   onDelete: (id: number) => void;
+  loading: boolean;
 }) {
+
   return (
     <section className="space-y-8">
       <h2 className="text-2xl font-semibold text-center">{title}</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {sports.map((s) => (
-          <Card key={s.id} className="relative">
-            {isAdmin && (
-              <div className="absolute top-2 right-2 flex gap-2 z-10">
-                <Button size="icon" variant="ghost" onClick={() => onEdit(s)}>
-                  ✏️
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  disabled={deletingId === s.id}
-                  onClick={() => onDelete(s.id)}
-                >
-                  {deletingId === s.id ? "⏳" : "🗑"}
-                </Button>
-              </div>
-            )}
-
-            <CardHeader>
-              <div className="relative w-full h-44 rounded-xl overflow-hidden">
-                <Image
-                  src={s.image || "/user.jpg"}
-                  alt={s.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover"
-                />
-              </div>
-              <CardTitle className="mt-3 text-center">{s.title}</CardTitle>
-            </CardHeader>
-
-            {s.description && (
-              <CardContent className="text-muted-foreground text-center">
-                {s.description}
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="h-44 bg-muted rounded-xl m-4" />
+              <CardContent className="space-y-3">
+                <div className="h-4 w-3/4 bg-muted rounded mx-auto" />
               </CardContent>
-            )}
-          </Card>
-        ))}
+            </Card>
+          ))
+        ) : (
+          sports.map((s) => (
+            <Card key={s.id} className="relative">
+              {isAdmin && (
+                <div className="absolute top-2 right-2 flex gap-2 z-10">
+                  <Button size="icon" variant="ghost" onClick={() => onEdit(s)}>
+                    ✏️
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    disabled={deletingId === s.id}
+                    onClick={() => onDelete(s.id)}
+                  >
+                    {deletingId === s.id ? "⏳" : "🗑"}
+                  </Button>
+                </div>
+              )}
+
+              <CardHeader>
+                <div className="relative w-full h-44 rounded-xl overflow-hidden">
+                  <Image
+                    src={s.image || "/user.jpg"}
+                    alt={s.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <CardTitle className="mt-3 text-center">{s.title}</CardTitle>
+              </CardHeader>
+
+              {s.description && (
+                <CardContent className="text-muted-foreground text-center">
+                  {s.description}
+                </CardContent>
+              )}
+            </Card>
+          ))
+        )}
       </div>
+
     </section>
   );
 }
