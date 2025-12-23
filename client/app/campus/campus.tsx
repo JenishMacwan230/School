@@ -52,11 +52,24 @@ export default function ExploreCampusPage() {
 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
 
   /* FETCH */
   useEffect(() => {
-    apiFetch("/api/campus").then(setSections);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await apiFetch("/api/campus");
+        setSections(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
 
   /* IMAGE UPLOAD */
   const uploadImage = async (file: File) => {
@@ -158,60 +171,73 @@ export default function ExploreCampusPage() {
         )}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sections.map((s) => (
-            <Card key={s.id} className="relative">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <div className="h-52 bg-muted rounded-t-md" />
+                <CardContent className="space-y-3 pt-4">
+                  <div className="h-4 w-3/4 bg-muted rounded" />
+                  <div className="h-4 w-full bg-muted rounded" />
+                  <div className="h-4 w-5/6 bg-muted rounded" />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            sections.map((s) => (
+              <Card key={s.id} className="relative">
+                <CardHeader>
+                  <div className="relative w-full h-52">
+                    <Image
+                      src={s.image || "/user.jpg"}
+                      alt={s.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
 
-              <CardHeader>
-                <div className="relative w-full" style={{ height: "13rem" }}>
-                  <Image
-                    src={s.image || "/user.jpg"}
-                    alt={s.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+                  <div className="flex items-start justify-between mt-3">
+                    <CardTitle>{s.title}</CardTitle>
 
-                <div className="flex items-start justify-between mt-3">
-                  <CardTitle>{s.title}</CardTitle>
+                    {isAdmin && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(s);
+                            setDraft(s);
+                            setImagePreview(s.image);
+                            setOpen(true);
+                          }}
+                        >
+                          ✏️
+                        </Button>
 
-                  {isAdmin && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(s);
-                          setDraft(s);
-                          setImagePreview(s.image);
-                          setOpen(true);
-                        }}
-                      >
-                        ✏️
-                      </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={deletingId === s.id}
+                          onClick={() => deleteSection(s.id)}
+                        >
+                          {deletingId === s.id ? "⏳" : "🗑"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
 
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        disabled={deletingId === s.id}
-                        onClick={() => deleteSection(s.id)}
-                      >
-                        {deletingId === s.id ? "⏳" : "🗑"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <p className="text-muted-foreground">{s.description}</p>
-              </CardContent>
-
-            </Card>
-          ))}
+                <CardContent>
+                  <p className="text-muted-foreground">{s.description}</p>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
+
+
         {/* DIALOG */}
-        <Dialog open={open} onOpenChange={setOpen}>
+        < Dialog open={open} onOpenChange={setOpen} >
           <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>
