@@ -11,7 +11,7 @@ interface LogoProps {
 
 export function Logo({
   className,
-  size = 40,
+  size = 50,
   showFullOnMobile = false,
 }: LogoProps) {
   return (
