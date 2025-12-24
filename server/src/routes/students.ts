@@ -1,37 +1,8 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
+import { pool } from "../db";
 
 const router = Router();
-
-/* =========================================================
-   IN-MEMORY STORAGE (NO DATABASE)
-   ========================================================= */
-
-// Student sections (acts like a fake DB)
-let studentSections = [
-  {
-    id: "1",
-    title: "Academic Excellence",
-    description: "Our students consistently perform well in academics.",
-    image: "",
-    created_at: new Date(),
-  },
-  {
-    id: "2",
-    title: "Sports & Activities",
-    description: "We encourage physical fitness and extracurriculars.",
-    image: "",
-    created_at: new Date(),
-  },
-];
-
-// Global student stats (single source of truth)
-let studentStats = {
-  total_students: 1200,
-  total_classes: 40,
-  achievements: 100,
-  activities: 30,
-};
 
 /* =========================================================
    SUPER ADMIN GUARD
@@ -62,50 +33,54 @@ function requireSuperAdmin(req: any, res: any, next: any) {
    ========================================================= */
 
 // GET all sections (PUBLIC)
-router.get("/sections", (_req, res) => {
-  res.json(studentSections);
+router.get("/sections", async (_req, res) => {
+  const result = await pool.query(
+    "SELECT id, title, description, image FROM student_sections ORDER BY id ASC"
+  );
+  res.json(result.rows);
 });
 
+
 // CREATE section (SUPER_ADMIN)
-router.post("/sections", requireSuperAdmin, (req, res) => {
+router.post("/sections", requireSuperAdmin, async (req, res) => {
   const { title, description, image } = req.body;
 
-  const newSection = {
-    id: Date.now().toString(),
-    title,
-    description,
-    image,
-    created_at: new Date(),
-  };
+  const result = await pool.query(
+    `
+    INSERT INTO student_sections (title, description, image)
+    VALUES ($1, $2, $3)
+    RETURNING *
+    `,
+    [title, description, image || null]
+  );
 
-  studentSections.push(newSection);
-  res.json(newSection);
+  res.json(result.rows[0]);
 });
 
 // UPDATE section (SUPER_ADMIN)
-router.put("/sections/:id", requireSuperAdmin, (req, res) => {
+router.put("/sections/:id", requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const { title, description, image } = req.body;
 
-  const index = studentSections.findIndex((s) => s.id === id);
-  if (index === -1) {
-    return res.status(404).json({ message: "Section not found" });
-  }
+  const result = await pool.query(
+    `
+    UPDATE student_sections
+    SET title=$1, description=$2, image=$3
+    WHERE id=$4
+    RETURNING *
+    `,
+    [title, description, image || null, id]
+  );
 
-  studentSections[index] = {
-    ...studentSections[index],
-    title,
-    description,
-    image,
-  };
-
-  res.json(studentSections[index]);
+  res.json(result.rows[0]);
 });
 
 // DELETE section (SUPER_ADMIN)
-router.delete("/sections/:id", requireSuperAdmin, (req, res) => {
-  const { id } = req.params;
-  studentSections = studentSections.filter((s) => s.id !== id);
+router.delete("/sections/:id", requireSuperAdmin, async (req, res) => {
+  await pool.query(
+    "DELETE FROM student_sections WHERE id=$1",
+    [req.params.id]
+  );
   res.json({ success: true });
 });
 
@@ -114,12 +89,16 @@ router.delete("/sections/:id", requireSuperAdmin, (req, res) => {
    ========================================================= */
 
 // GET stats (PUBLIC)
-router.get("/stats", (_req, res) => {
-  res.json(studentStats);
+router.get("/stats", async (_req, res) => {
+  const result = await pool.query(
+    "SELECT total_students, total_classes, achievements, activities FROM student_stats WHERE id=1"
+  );
+  res.json(result.rows[0]);
 });
 
+
 // UPDATE stats (SUPER_ADMIN)
-router.put("/stats", requireSuperAdmin, (req, res) => {
+router.put("/stats", requireSuperAdmin, async (req, res) => {
   const {
     total_students,
     total_classes,
@@ -127,14 +106,26 @@ router.put("/stats", requireSuperAdmin, (req, res) => {
     activities,
   } = req.body;
 
-  studentStats = {
-    total_students: Number(total_students),
-    total_classes: Number(total_classes),
-    achievements: Number(achievements),
-    activities: Number(activities),
-  };
+  const result = await pool.query(
+    `
+    UPDATE student_stats
+    SET total_students=$1,
+        total_classes=$2,
+        achievements=$3,
+        activities=$4
+    WHERE id=1
+    RETURNING *
+    `,
+    [
+      total_students,
+      total_classes,
+      achievements,
+      activities,
+    ]
+  );
 
-  res.json(studentStats);
+  res.json(result.rows[0]);
 });
+
 
 export default router;

@@ -84,10 +84,6 @@ export default function StudentsPage() {
   }, []);
 
 
-  useEffect(() => {
-    apiFetch("/api/students/sections").then(setSections);
-    apiFetch("/api/students/stats").then(setStats);
-  }, []);
 
   const otherSections = sections.slice(1);
 
