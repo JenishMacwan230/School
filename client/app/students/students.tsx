@@ -17,11 +17,12 @@ import { Users, GraduationCap, Trophy, BookOpen } from "lucide-react";
 /* ================= TYPES ================= */
 
 interface StudentSection {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  image?: string;
+  image?: string | null;
 }
+
 
 interface StudentStats {
   total_students: number;
@@ -107,12 +108,12 @@ export default function StudentsPage() {
     return JSON.parse(text);
   };
 
-interface StudentSection {
-  id: string;
-  title: string;
-  description: string;
-  image?: string;
-}
+  interface StudentSection {
+    id: string;
+    title: string;
+    description: string;
+    image?: string;
+  }
 
   const createEmptySection = (): StudentSection => ({
     id: "",
@@ -186,7 +187,7 @@ interface StudentSection {
         )}
 
         {/* ================= SECTIONS ================= */}
-        {otherSections.map((section) => (
+        {otherSections.filter(Boolean).map((section) => (
           <Card key={section.id} className="relative">
             {isAdmin && (
               <div className="absolute top-3 right-3 flex gap-2">
@@ -343,9 +344,14 @@ interface StudentSection {
                       }
                     );
 
-                    setSections((prev) =>
-                      prev.map((s) => (s.id === saved.id ? saved : s))
-                    );
+                    if (saved && saved.id) {
+                      setSections((prev) =>
+                        prev.map((s) => (s.id === saved.id ? saved : s))
+                      );
+                    } else {
+                      console.error("Invalid section returned from API:", saved);
+                    }
+
                   }
 
                   setEditSection(null);
