@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { pool } from "../db";
+import { Types } from "mongoose";
 import cloudinary from "../lib/cloudinary";
 import {
   authenticateToken,
   requireSuperAdmin,
 } from "../middleware/authMiddleware";
+import { Teacher } from "../models";
 
 const router = Router();
 
@@ -38,33 +39,22 @@ router.post(
     }
 
     try {
-      const result = await pool.query(
-        `
-        INSERT INTO teachers (
-          name, subject, role, "class", stream,
-          experience, qualification, bio,
-          photo, photo_public_id, email, phone
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-        RETURNING *
-        `,
-        [
-          name,
-          subject,
-          role,
-          schoolClass,
-          stream || null,
-          experience || null,
-          qualification || null,
-          bio || null,
-          photo || null,
-          photo_public_id || null,
-          email,
-          phone || null,
-        ]
-      );
+      const teacher = await Teacher.create({
+        name,
+        subject,
+        role,
+        class: schoolClass,
+        stream: stream || null,
+        experience: experience || null,
+        qualification: qualification || null,
+        bio: bio || null,
+        photo: photo || null,
+        photo_public_id: photo_public_id || null,
+        email,
+        phone: phone || null,
+      });
 
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(teacher.toJSON());
     } catch (err: any) {
       console.error("CREATE TEACHER ERROR:", err.message);
       res.status(500).json({
@@ -81,10 +71,8 @@ router.post(
  */
 router.get("/", async (_req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM teachers ORDER BY name ASC`
-    );
-    res.json(result.rows);
+    const teachers = await Teacher.find().sort({ name: 1 });
+    res.json(teachers);
   } catch (err: any) {
     console.error("FETCH TEACHERS ERROR:", err.message);
     res.status(500).json({ message: "Failed to fetch teachers" });
@@ -102,6 +90,10 @@ router.put(
   async (req, res) => {
     const { id } = req.params;
 
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid teacher id" });
+    }
+
     const {
       name,
       subject,
@@ -118,56 +110,35 @@ router.put(
     } = req.body;
 
     try {
-      // 1️⃣ Get old image
-      const old = await pool.query(
-        `SELECT photo_public_id FROM teachers WHERE id = $1`,
-        [id]
-      );
+      const existing = await Teacher.findById(id);
 
-      const oldPublicId = old.rows[0]?.photo_public_id;
-
-      // 2️⃣ Delete old Cloudinary image if changed
-      if (oldPublicId && oldPublicId !== photo_public_id) {
-        await cloudinary.uploader.destroy(oldPublicId);
+      if (!existing) {
+        return res.status(404).json({ message: "Teacher not found" });
       }
 
-      // 3️⃣ Update DB
-      const result = await pool.query(
-        `
-        UPDATE teachers SET
-          name = $1,
-          subject = $2,
-          role = $3,
-          "class" = $4,
-          stream = $5,
-          experience = $6,
-          qualification = $7,
-          bio = $8,
-          photo = $9,
-          photo_public_id = $10,
-          email = $11,
-          phone = $12
-        WHERE id = $13
-        RETURNING *
-        `,
-        [
-          name,
-          subject,
-          role,
-          schoolClass,
-          stream || null,
-          experience || null,
-          qualification || null,
-          bio || null,
-          photo || null,
-          photo_public_id || null,
-          email,
-          phone || null,
-          id,
-        ]
-      );
+      if (
+        existing.photo_public_id &&
+        existing.photo_public_id !== photo_public_id
+      ) {
+        await cloudinary.uploader.destroy(existing.photo_public_id);
+      }
 
-      res.json(result.rows[0]);
+      existing.name = name;
+      existing.subject = subject;
+      existing.role = role;
+      existing.class = schoolClass;
+      existing.stream = stream || null;
+      existing.experience = experience || null;
+      existing.qualification = qualification || null;
+      existing.bio = bio || null;
+      existing.photo = photo || null;
+      existing.photo_public_id = photo_public_id || null;
+      existing.email = email;
+      existing.phone = phone || null;
+
+      const saved = await existing.save();
+
+      res.json(saved.toJSON());
     } catch (err: any) {
       console.error("UPDATE TEACHER ERROR:", err.message);
       res.status(500).json({
@@ -189,19 +160,22 @@ router.delete(
   async (req, res) => {
     const { id } = req.params;
 
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid teacher id" });
+    }
+
     try {
-      const result = await pool.query(
-        `SELECT photo_public_id FROM teachers WHERE id = $1`,
-        [id]
-      );
+      const existing = await Teacher.findById(id);
 
-      const publicId = result.rows[0]?.photo_public_id;
-
-      if (publicId) {
-        await cloudinary.uploader.destroy(publicId);
+      if (!existing) {
+        return res.status(404).json({ message: "Teacher not found" });
       }
 
-      await pool.query(`DELETE FROM teachers WHERE id = $1`, [id]);
+      if (existing.photo_public_id) {
+        await cloudinary.uploader.destroy(existing.photo_public_id);
+      }
+
+      await existing.deleteOne();
 
       res.json({ message: "Teacher deleted successfully" });
     } catch (err: any) {

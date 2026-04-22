@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { pool } from "../db";
 import { authenticateToken, requireSuperAdmin } from "../middleware/authMiddleware";
+import { Otp } from "../models";
 
 const router = Router();
 
@@ -24,11 +24,12 @@ router.post(
       // generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      await pool.query(
-        `INSERT INTO otps (email, otp_code, purpose, expires_at)
-         VALUES ($1, $2, $3, NOW() + INTERVAL '5 minutes')`,
-        [user.email ?? "admin", otp, purpose]
-      );
+      await Otp.create({
+        email: user.email ?? "admin",
+        otp_code: otp,
+        purpose,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000),
+      });
 
       // TEMP: log OTP instead of emailing
       console.log("OTP GENERATED:", otp);
@@ -58,23 +59,18 @@ router.post(
         return res.status(400).json({ message: "OTP and purpose required" });
       }
 
-      const result = await pool.query(
-        `SELECT id FROM otps
-         WHERE otp_code = $1
-           AND purpose = $2
-           AND used = false
-           AND expires_at > NOW()`,
-        [otp, purpose]
-      );
+      const existing = await Otp.findOne({
+        otp_code: otp,
+        purpose,
+        used: false,
+        expires_at: { $gt: new Date() },
+      });
 
-      if (result.rowCount === 0) {
+      if (!existing) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
       }
 
-      await pool.query(
-        `UPDATE otps SET used = true WHERE id = $1`,
-        [result.rows[0].id]
-      );
+      await Otp.findByIdAndUpdate(existing.id, { used: true });
 
       res.json({ message: "OTP verified successfully" });
     } catch (err) {

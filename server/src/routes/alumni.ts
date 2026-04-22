@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { pool } from "../db";
 import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
+import { Alumni } from "../models";
 
 const router = Router();
 
@@ -18,43 +19,86 @@ function requireSuperAdmin(req: any, res: any, next: any) {
 
 /* ===== GET (PUBLIC) ===== */
 router.get("/", async (_req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM alumni ORDER BY created_at DESC"
-  );
-  res.json(result.rows);
+  try {
+    const alumni = await Alumni.find().sort({ createdAt: -1 });
+    res.json(alumni);
+  } catch (error) {
+    console.error("FETCH ALUMNI ERROR", error);
+    res.status(500).json({ message: "Failed to fetch alumni" });
+  }
 });
 
 /* ===== CREATE ===== */
 router.post("/", requireSuperAdmin, async (req, res) => {
-  const { name, batch, profession, achievement, image } = req.body;
+  try {
+    const { name, batch, profession, achievement, image } = req.body;
 
-  const result = await pool.query(
-    `INSERT INTO alumni (name, batch, profession, achievement, image)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [name, batch, profession, achievement, image || "/user.jpg"]
-  );
+    if (!name?.trim()) {
+      return res.status(400).json({ message: "Name is required" });
+    }
 
-  res.json(result.rows[0]);
+    const alumni = await Alumni.create({
+      name,
+      batch,
+      profession,
+      achievement,
+      image: image || "/user.jpg",
+    });
+
+    res.json(alumni.toJSON());
+  } catch (error) {
+    console.error("CREATE ALUMNI ERROR", error);
+    res.status(500).json({ message: "Failed to create alumni" });
+  }
 });
 
 /* ===== UPDATE ===== */
 router.put("/:id", requireSuperAdmin, async (req, res) => {
-  const { name, batch, profession, achievement, image } = req.body;
+  try {
+    const { id } = req.params;
+    const { name, batch, profession, achievement, image } = req.body;
 
-  await pool.query(
-    `UPDATE alumni
-     SET name=$1, batch=$2, profession=$3, achievement=$4, image=$5
-     WHERE id=$6`,
-    [name, batch, profession, achievement, image, req.params.id]
-  );
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid alumni id" });
+    }
 
-  res.json({ success: true });
+    const updated = await Alumni.findByIdAndUpdate(
+      id,
+      { name, batch, profession, achievement, image },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Alumni not found" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error("UPDATE ALUMNI ERROR", error);
+    res.status(500).json({ message: "Failed to update alumni" });
+  }
 });
 
 /* ===== DELETE ===== */
 router.delete("/:id", requireSuperAdmin, async (req, res) => {
-  await pool.query("DELETE FROM alumni WHERE id=$1", [req.params.id]);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid alumni id" });
+    }
+
+    const deleted = await Alumni.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Alumni not found" });
+    }
+
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error("DELETE ALUMNI ERROR", error);
+    res.status(500).json({ message: "Failed to delete alumni" });
+  }
 });
 
 export default router;

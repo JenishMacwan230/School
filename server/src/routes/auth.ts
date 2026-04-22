@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { pool } from "../db";
+import { User } from "../models";
 
 const router = Router();
 
@@ -16,16 +16,15 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const result = await pool.query(
-      "SELECT id, email, password_hash, role FROM users WHERE email = $1 AND is_active = true",
-      [email]
-    );
+    const normalizedEmail = email.toLowerCase();
+    const user = await User.findOne({
+      email: normalizedEmail,
+      is_active: true,
+    });
 
-    if (result.rowCount === 0) {
+    if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
-    const user = result.rows[0];
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {

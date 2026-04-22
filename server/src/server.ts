@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
+import { connectDB } from "./db";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
 import otpRoutes from "./routes/otp";
@@ -72,6 +73,13 @@ app.get("/api/health", (_req, res) => {
 });
 
 /* ================= START SERVER ================= */
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("MongoDB connection failed", error);
+    process.exit(1);
+  });

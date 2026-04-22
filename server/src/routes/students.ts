@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import { pool } from "../db";
+import { Types } from "mongoose";
+import { StudentSection, StudentStat } from "../models";
 
 const router = Router();
 
@@ -37,10 +38,8 @@ function requireSuperAdmin(req: any, res: any, next: any) {
 // GET all sections (PUBLIC)
 router.get("/sections", async (_req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT id, title, description, image FROM student_sections ORDER BY id ASC"
-    );
-    res.json(result.rows);
+    const sections = await StudentSection.find().sort({ createdAt: 1 });
+    res.json(sections);
   } catch (err) {
     console.error("GET sections error:", err);
     res.status(500).json({ message: "Failed to fetch sections" });
@@ -56,16 +55,13 @@ router.post("/sections", requireSuperAdmin, async (req, res) => {
       return res.status(400).json({ message: "Title and description required" });
     }
 
-    const result = await pool.query(
-      `
-      INSERT INTO student_sections (title, description, image)
-      VALUES ($1, $2, $3)
-      RETURNING *
-      `,
-      [title, description, image || null]
-    );
+    const section = await StudentSection.create({
+      title,
+      description,
+      image: image || null,
+    });
 
-    res.json(result.rows[0]);
+    res.json(section.toJSON());
   } catch (err) {
     console.error("CREATE section error:", err);
     res.status(500).json({ message: "Failed to create section" });
@@ -75,30 +71,24 @@ router.post("/sections", requireSuperAdmin, async (req, res) => {
 // UPDATE section (SUPER_ADMIN)
 router.put("/sections/:id", requireSuperAdmin, async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const { title, description, image } = req.body;
 
-    if (!id) {
+    if (!Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid section id" });
     }
 
-    const result = await pool.query(
-      `
-      UPDATE student_sections
-      SET title = $1,
-          description = $2,
-          image = $3
-      WHERE id = $4
-      RETURNING *
-      `,
-      [title, description, image || null, id]
+    const updated = await StudentSection.findByIdAndUpdate(
+      id,
+      { title, description, image: image || null },
+      { new: true }
     );
 
-    if (result.rowCount === 0) {
+    if (!updated) {
       return res.status(404).json({ message: "Section not found" });
     }
 
-    res.json(result.rows[0]);
+    res.json(updated);
   } catch (err) {
     console.error("UPDATE section error:", err);
     res.status(500).json({ message: "Failed to update section" });
@@ -108,22 +98,19 @@ router.put("/sections/:id", requireSuperAdmin, async (req, res) => {
 // DELETE section (SUPER_ADMIN)
 router.delete("/sections/:id", requireSuperAdmin, async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = req.params;
 
-    if (!id) {
+    if (!Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid section id" });
     }
 
-    const result = await pool.query(
-      "DELETE FROM student_sections WHERE id = $1 RETURNING *",
-      [id]
-    );
+    const deleted = await StudentSection.findByIdAndDelete(id);
 
-    if (result.rowCount === 0) {
+    if (!deleted) {
       return res.status(404).json({ message: "Section not found" });
     }
 
-    res.json({ success: true, deleted: result.rows[0] });
+    res.json({ success: true, deleted });
   } catch (err) {
     console.error("DELETE section error:", err);
     res.status(500).json({ message: "Failed to delete section" });
@@ -137,15 +124,8 @@ router.delete("/sections/:id", requireSuperAdmin, async (req, res) => {
 // GET stats (PUBLIC)
 router.get("/stats", async (_req, res) => {
   try {
-    const result = await pool.query(
-      `
-      SELECT total_students, total_classes, achievements, activities
-      FROM student_stats
-      WHERE id = 1
-      `
-    );
-
-    res.json(result.rows[0]);
+    const stats = await StudentStat.findOne();
+    res.json(stats || null);
   } catch (err) {
     console.error("GET stats error:", err);
     res.status(500).json({ message: "Failed to fetch stats" });
@@ -162,25 +142,18 @@ router.put("/stats", requireSuperAdmin, async (req, res) => {
       activities,
     } = req.body;
 
-    const result = await pool.query(
-      `
-      UPDATE student_stats
-      SET total_students = $1,
-          total_classes = $2,
-          achievements = $3,
-          activities = $4
-      WHERE id = 1
-      RETURNING *
-      `,
-      [
-        Number(total_students),
-        Number(total_classes),
-        Number(achievements),
-        Number(activities),
-      ]
+    const updated = await StudentStat.findOneAndUpdate(
+      {},
+      {
+        total_students: Number(total_students) || 0,
+        total_classes: Number(total_classes) || 0,
+        achievements: Number(achievements) || 0,
+        activities: Number(activities) || 0,
+      },
+      { new: true, upsert: true }
     );
 
-    res.json(result.rows[0]);
+    res.json(updated);
   } catch (err) {
     console.error("UPDATE stats error:", err);
     res.status(500).json({ message: "Failed to update stats" });

@@ -1,6 +1,7 @@
 import { Router } from "express";
-import {pool} from "../db";
 import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
+import { GalleryItem } from "../models";
 
 const router = Router();
 
@@ -20,27 +21,53 @@ function requireSuperAdmin(req: any, res: any, next: any) {
 }
 
 /* ===== GET ===== */
-router.get("/", async (_, res) => {
-  const { rows } = await pool.query(
-    "SELECT * FROM gallery ORDER BY id DESC"
-  );
-  res.json(rows);
+router.get("/", async (_req, res) => {
+  try {
+    const items = await GalleryItem.find().sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    console.error("FETCH GALLERY ERROR", error);
+    res.status(500).json({ message: "Failed to fetch gallery" });
+  }
 });
 
 /* ===== CREATE ===== */
 router.post("/", requireSuperAdmin, async (req, res) => {
-  const { image } = req.body;
-  const { rows } = await pool.query(
-    "INSERT INTO gallery (image) VALUES ($1) RETURNING *",
-    [image]
-  );
-  res.json(rows[0]);
+  try {
+    const { image } = req.body;
+
+    if (!image?.trim()) {
+      return res.status(400).json({ message: "Image URL is required" });
+    }
+
+    const item = await GalleryItem.create({ image });
+    res.json(item.toJSON());
+  } catch (error) {
+    console.error("CREATE GALLERY ITEM ERROR", error);
+    res.status(500).json({ message: "Failed to add gallery image" });
+  }
 });
 
 /* ===== DELETE ===== */
 router.delete("/:id", requireSuperAdmin, async (req, res) => {
-  await pool.query("DELETE FROM gallery WHERE id = $1", [req.params.id]);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid gallery id" });
+    }
+
+    const deleted = await GalleryItem.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Gallery item not found" });
+    }
+
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error("DELETE GALLERY ITEM ERROR", error);
+    res.status(500).json({ message: "Failed to delete gallery item" });
+  }
 });
 
 export default router;

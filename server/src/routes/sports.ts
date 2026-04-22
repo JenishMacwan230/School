@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import {pool} from "../db"; // adjust path if needed
+import { Types } from "mongoose";
+import { Sport } from "../models";
 
 const router = Router();
 
@@ -30,10 +31,8 @@ function requireSuperAdmin(req: any, res: any, next: any) {
 // ✅ THIS WAS MISSING
 router.get("/", async (_req, res) => {
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM sports ORDER BY position ASC, id DESC"
-    );
-    res.json(rows); // ✅ MUST RETURN JSON
+    const sports = await Sport.find().sort({ position: 1, createdAt: -1 });
+    res.json(sports);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch sports" });
@@ -42,40 +41,75 @@ router.get("/", async (_req, res) => {
 
 /* ================= CREATE ================= */
 router.post("/", requireSuperAdmin, async (req, res) => {
-  const { title, category, description, image, position } = req.body;
+  try {
+    const { title, category, description, image, position } = req.body;
 
-  if (!title || !category) {
-    return res.status(400).json({ message: "Title & category required" });
+    if (!title || !category) {
+      return res.status(400).json({ message: "Title & category required" });
+    }
+
+    const sport = await Sport.create({
+      title,
+      category,
+      description: description || "",
+      image,
+      position: position ?? 0,
+    });
+
+    res.json(sport.toJSON());
+  } catch (error) {
+    console.error("CREATE SPORT ERROR", error);
+    res.status(500).json({ message: "Failed to create sport" });
   }
-
-  const { rows } = await pool.query(
-    `INSERT INTO sports (title, category, description, image, position)
-     VALUES ($1,$2,$3,$4,$5)
-     RETURNING *`,
-    [title, category, description || "", image, position || 0]
-  );
-
-  res.json(rows[0]);
 });
 
 /* ================= UPDATE ================= */
 router.put("/:id", requireSuperAdmin, async (req, res) => {
-  const { title, category, description, image, position } = req.body;
+  try {
+    const { id } = req.params;
+    const { title, category, description, image, position } = req.body;
 
-  await pool.query(
-    `UPDATE sports
-     SET title=$1, category=$2, description=$3, image=$4, position=$5
-     WHERE id=$6`,
-    [title, category, description, image, position, req.params.id]
-  );
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid sport id" });
+    }
 
-  res.json({ success: true });
+    const updated = await Sport.findByIdAndUpdate(
+      id,
+      { title, category, description, image, position },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Sport not found" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error("UPDATE SPORT ERROR", error);
+    res.status(500).json({ message: "Failed to update sport" });
+  }
 });
 
 /* ================= DELETE ================= */
 router.delete("/:id", requireSuperAdmin, async (req, res) => {
-  await pool.query("DELETE FROM sports WHERE id=$1", [req.params.id]);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid sport id" });
+    }
+
+    const deleted = await Sport.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Sport not found" });
+    }
+
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error("DELETE SPORT ERROR", error);
+    res.status(500).json({ message: "Failed to delete sport" });
+  }
 });
 
 export default router;

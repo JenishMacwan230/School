@@ -1,6 +1,7 @@
 import { Router } from "express";
-import {pool} from "../db";
 import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
+import { CampusSection } from "../models";
 
 const router = Router();
 
@@ -17,43 +18,85 @@ const requireSuperAdmin = (req: any, res: any, next: any) => {
 
 /* PUBLIC */
 router.get("/", async (_req, res) => {
-  const { rows } = await pool.query(
-    "SELECT * FROM campus_sections ORDER BY position ASC"
-  );
-  res.json(rows);
+  try {
+    const sections = await CampusSection.find().sort({ position: 1, createdAt: 1 });
+    res.json(sections);
+  } catch (error) {
+    console.error("FETCH CAMPUS SECTIONS ERROR", error);
+    res.status(500).json({ message: "Failed to fetch campus sections" });
+  }
 });
 
 /* ADMIN */
 router.post("/", requireSuperAdmin, async (req, res) => {
-  const { title, description, image, position } = req.body;
+  try {
+    const { title, description, image, position } = req.body;
 
-  const { rows } = await pool.query(
-    `INSERT INTO campus_sections (title, description, image, position)
-     VALUES ($1,$2,$3,$4) RETURNING *`,
-    [title, description, image, position]
-  );
+    if (!title?.trim() || !description?.trim()) {
+      return res
+        .status(400)
+        .json({ message: "Title and description are required" });
+    }
 
-  res.json(rows[0]);
+    const section = await CampusSection.create({
+      title,
+      description,
+      image,
+      position: position ?? 0,
+    });
+
+    res.json(section.toJSON());
+  } catch (error) {
+    console.error("CREATE CAMPUS SECTION ERROR", error);
+    res.status(500).json({ message: "Failed to create campus section" });
+  }
 });
 
 router.put("/:id", requireSuperAdmin, async (req, res) => {
-  const { title, description, image, position } = req.body;
+  try {
+    const { id } = req.params;
+    const { title, description, image, position } = req.body;
 
-  await pool.query(
-    `UPDATE campus_sections
-     SET title=$1, description=$2, image=$3, position=$4
-     WHERE id=$5`,
-    [title, description, image, position, req.params.id]
-  );
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid section id" });
+    }
 
-  res.json({ success: true });
+    const updated = await CampusSection.findByIdAndUpdate(
+      id,
+      { title, description, image, position },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Section not found" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error("UPDATE CAMPUS SECTION ERROR", error);
+    res.status(500).json({ message: "Failed to update campus section" });
+  }
 });
 
 router.delete("/:id", requireSuperAdmin, async (req, res) => {
-  await pool.query("DELETE FROM campus_sections WHERE id=$1", [
-    req.params.id,
-  ]);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid section id" });
+    }
+
+    const deleted = await CampusSection.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Section not found" });
+    }
+
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error("DELETE CAMPUS SECTION ERROR", error);
+    res.status(500).json({ message: "Failed to delete campus section" });
+  }
 });
 
 export default router;
