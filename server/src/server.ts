@@ -1,3 +1,11 @@
+/* ================= GLOBAL ERROR HANDLERS ================= */
+process.on("uncaughtException", (err) => {
+  console.error("💥 UNCAUGHT EXCEPTION:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("💥 UNHANDLED REJECTION:", reason);
+});
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -17,18 +25,35 @@ import campusRouter from "./routes/campus";
 import alumniRoutes from "./routes/alumni";
 import sportsRoutes from "./routes/sports";
 import galleryRoutes from "./routes/gallery";
+import { requireDbConnection } from "./middleware/dbReady";
 
-
+console.log("✅ All modules imported successfully");
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://rnnaikshighschool.vercel.app",
+].filter(Boolean) as string[];
+
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "https://rnnaikshighschool.vercel.app", // ✅ FRONTEND
+    origin: (origin, callback) => {
+      // Allow non-browser and same-origin requests.
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -51,14 +76,14 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminPasswordRoutes);
-app.use("/api/otp", otpRoutes);
-app.use("/api/about", aboutRoutes);
-app.use("/api/teachers", teachersRoutes);
-app.use("/api/students", studentsRoutes);
-app.use("/api/campus", campusRouter);
-app.use("/api/alumni", alumniRoutes);
-app.use("/api/sports", sportsRoutes);
-app.use("/api/gallery", galleryRoutes);
+app.use("/api/otp", requireDbConnection, otpRoutes);
+app.use("/api/about", requireDbConnection, aboutRoutes);
+app.use("/api/teachers", requireDbConnection, teachersRoutes);
+app.use("/api/students", requireDbConnection, studentsRoutes);
+app.use("/api/campus", requireDbConnection, campusRouter);
+app.use("/api/alumni", requireDbConnection, alumniRoutes);
+app.use("/api/sports", requireDbConnection, sportsRoutes);
+app.use("/api/gallery", requireDbConnection, galleryRoutes);
 app.use("/api/upload", uploadRoutes);
 
 
@@ -73,13 +98,14 @@ app.get("/api/health", (_req, res) => {
 });
 
 /* ================= START SERVER ================= */
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection failed", error);
-    process.exit(1);
-  });
+console.log(`✅ Starting server on port ${PORT}...`);
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+
+connectDB().catch((error) => {
+  console.error(
+    "MongoDB connection failed. API is running, but database-backed endpoints may return errors until DB reconnects.",
+    error
+  );
+});
