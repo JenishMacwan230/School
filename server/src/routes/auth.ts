@@ -1,7 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../models";
 
 const router = Router();
 
@@ -16,23 +15,36 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const normalizedEmail = email.toLowerCase();
-    const user = await User.findOne({
-      email: normalizedEmail,
-      is_active: true,
-    });
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-    if (!user) {
+    if (!adminEmail || (!adminPassword && !adminPasswordHash)) {
+      return res.status(500).json({
+        message: "Server admin credentials are not configured",
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (normalizedEmail !== adminEmail.trim().toLowerCase()) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const normalizedPassword = String(password).trim();
+
+    let isMatch = false;
+    if (adminPassword) {
+      isMatch = normalizedPassword === adminPassword;
+    } else if (adminPasswordHash) {
+      isMatch = await bcrypt.compare(normalizedPassword, adminPasswordHash);
+    }
+
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: "admin", email: adminEmail, role: "SUPER_ADMIN" },
       process.env.JWT_SECRET as string,
       { expiresIn: "1d" }
     );
@@ -51,9 +63,9 @@ router.post("/login", async (req, res) => {
     res.json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
+        id: "admin",
+        email: adminEmail,
+        role: "SUPER_ADMIN",
       },
     });
   } catch (err) {
@@ -88,11 +100,12 @@ router.get("/me", (req, res) => {
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    ) as { userId: string; role: string };
+    ) as { userId: string; email?: string; role: string };
 
     res.json({
       user: {
         id: decoded.userId,
+        email: decoded.email,
         role: decoded.role,
       },
     });

@@ -67,6 +67,7 @@ export default function AboutPage() {
   const [errors, setErrors] = useState<{ name?: string; role?: string }>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /* ================= VALIDATION ================= */
 
@@ -100,6 +101,13 @@ export default function AboutPage() {
         setTrust(t);
         setTrustDraft(t);
         setTrustees(list);
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Failed to load about data";
+        setLoadError(message);
+        setTrust(null);
+        setTrustDraft(null);
+        setTrustees([]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -151,6 +159,14 @@ export default function AboutPage() {
       <History />
 
       <Separator />
+
+      {loadError && (
+        <Card>
+          <CardContent className="p-4 text-sm text-red-600">
+            {loadError}
+          </CardContent>
+        </Card>
+      )}
 
       {/* TRUST INFO */}
       {trust && (

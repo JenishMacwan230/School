@@ -76,6 +76,7 @@ export default function TeachersPage() {
     const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
     const [teacherList, setTeacherList] = useState<Teacher[]>([]);
     const [loadingTeachers, setLoadingTeachers] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,10 +96,14 @@ export default function TeachersPage() {
     useEffect(() => {
         const fetchTeachers = async () => {
             try {
+                setLoadError(null);
                 const data = await apiFetch("/api/teachers");
                 setTeacherList(data);
-            } catch (err) {
-                console.error("Failed to fetch teachers", err);
+            } catch (err: unknown) {
+                const message =
+                    err instanceof Error ? err.message : "Failed to fetch teachers";
+                setLoadError(message);
+                setTeacherList([]);
             } finally {
                 setLoadingTeachers(false);
             }
@@ -229,6 +234,14 @@ export default function TeachersPage() {
 
 
                 </div>
+
+                {loadError && (
+                    <Card className="border-red-200 bg-red-50">
+                        <CardContent className="pt-6 text-sm text-red-700">
+                            {loadError}
+                        </CardContent>
+                    </Card>
+                )}
 
 
 

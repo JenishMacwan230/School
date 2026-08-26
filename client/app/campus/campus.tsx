@@ -53,6 +53,7 @@ export default function ExploreCampusPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
 
   /* FETCH */
@@ -60,8 +61,13 @@ export default function ExploreCampusPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setLoadError(null);
         const data = await apiFetch("/api/campus");
         setSections(data);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch campus data";
+        setLoadError(message);
+        setSections([]);
       } finally {
         setLoading(false);
       }
@@ -163,6 +169,14 @@ export default function ExploreCampusPage() {
         </section>
 
         <div className="h-px bg-border" />
+
+        {loadError && (
+          <Card>
+            <CardContent className="pt-6 text-sm text-red-600">
+              {loadError}
+            </CardContent>
+          </Card>
+        )}
 
         {isAdmin && (
           <div className="flex justify-end">

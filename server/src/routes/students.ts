@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
+import { mongoose } from "../db";
 import { StudentSection, StudentStat } from "../models";
 
 const router = Router();
@@ -38,6 +39,10 @@ function requireSuperAdmin(req: any, res: any, next: any) {
 // GET all sections (PUBLIC)
 router.get("/sections", async (_req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json([]);
+    }
+
     const sections = await StudentSection.find().sort({ createdAt: 1 });
     res.json(sections);
   } catch (err) {
@@ -124,6 +129,15 @@ router.delete("/sections/:id", requireSuperAdmin, async (req, res) => {
 // GET stats (PUBLIC)
 router.get("/stats", async (_req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        total_students: 0,
+        total_classes: 0,
+        achievements: 0,
+        activities: 0,
+      });
+    }
+
     const stats = await StudentStat.findOne();
     res.json(stats || null);
   } catch (err) {

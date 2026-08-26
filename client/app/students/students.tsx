@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -72,16 +73,33 @@ export default function StudentsPage() {
   const [saving, setSaving] = useState(false);
   const [editStats, setEditStats] = useState(false);
   const [statsDraft, setStatsDraft] = useState<StudentStats>(stats);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /* ================= FETCH DATA ================= */
 
   useEffect(() => {
-    apiFetch("/api/students/sections").then(setSections);
-
-    apiFetch("/api/students/stats").then((data) => {
-      setStats(data);
-      setStatsDraft(data);
-    });
+    Promise.all([
+      apiFetch("/api/students/sections"),
+      apiFetch("/api/students/stats"),
+    ])
+      .then(([sectionsData, statsData]) => {
+        setLoadError(null);
+        setSections(sectionsData);
+        setStats(statsData);
+        setStatsDraft(statsData);
+      })
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch student data";
+        setLoadError(message);
+        setSections([]);
+        setStats({
+          total_students: 0,
+          total_classes: 0,
+          achievements: 0,
+          activities: 0,
+        });
+      });
   }, []);
 
 
@@ -134,6 +152,14 @@ export default function StudentsPage() {
             Nurturing talent, building futures
           </p>
         </div>
+
+        {loadError && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6 text-sm text-red-700">
+              {loadError}
+            </CardContent>
+          </Card>
+        )}
 
 
         {isAdmin && (
@@ -211,14 +237,20 @@ export default function StudentsPage() {
                     );
                     if (!ok) return;
 
-                    await apiFetch(
-                      `/api/students/sections/${section.id}`,
-                      { method: "DELETE" }
-                    );
+                    try {
+                      await apiFetch(
+                        `/api/students/sections/${section.id}`,
+                        { method: "DELETE" }
+                      );
 
-                    setSections((prev) =>
-                      prev.filter((s) => s.id !== section.id)
-                    );
+                      setSections((prev) =>
+                        prev.filter((s) => s.id !== section.id)
+                      );
+                    } catch (error: unknown) {
+                      const message =
+                        error instanceof Error ? error.message : "Failed to delete section";
+                      setLoadError(message);
+                    }
                   }}
                 >
                   Delete
@@ -255,6 +287,9 @@ export default function StudentsPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Student Section</DialogTitle>
+              <DialogDescription>
+                Update section details and save changes.
+              </DialogDescription>
             </DialogHeader>
 
             <label className="cursor-pointer flex justify-center">
@@ -356,6 +391,10 @@ export default function StudentsPage() {
 
                   setEditSection(null);
                   setImageFile(null);
+                } catch (error: unknown) {
+                  const message =
+                    error instanceof Error ? error.message : "Failed to save section";
+                  setLoadError(message);
                 } finally {
                   setSaving(false);
                 }
@@ -382,6 +421,9 @@ export default function StudentsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Student Statistics</DialogTitle>
+            <DialogDescription>
+              Edit the student statistics and save to apply updates.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -481,6 +523,10 @@ export default function StudentsPage() {
 
                 setStats(updated);
                 setEditStats(false);
+              } catch (error: unknown) {
+                const message =
+                  error instanceof Error ? error.message : "Failed to save statistics";
+                setLoadError(message);
               } finally {
                 setSaving(false);
               }

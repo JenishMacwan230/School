@@ -15,6 +15,7 @@ mongoose.set("toJSON", {
 });
 
 mongoose.set("toObject", { virtuals: true });
+mongoose.set("bufferCommands", false);
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
@@ -26,7 +27,10 @@ let isConnected = false;
 export const connectDB = async () => {
   if (isConnected) return;
 
-  const options: ConnectOptions = {};
+  const options: ConnectOptions = {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  };
   if (process.env.DB_NAME) {
     options.dbName = process.env.DB_NAME;
   }
@@ -41,8 +45,17 @@ export const connectDB = async () => {
       console.warn("MongoDB disconnected");
     });
   } catch (error) {
-    console.error("Failed to connect to MongoDB", error);
-    process.exit(1);
+    isConnected = false;
+    const maybeMongoError = error as { code?: number; codeName?: string };
+    if (maybeMongoError?.code === 8000) {
+      console.error(
+        "MongoDB Atlas authentication failed (code 8000). Check MONGODB_URI username/password, URL encoding, and Atlas DB user permissions.",
+        error
+      );
+    } else {
+      console.error("Failed to connect to MongoDB", error);
+    }
+    throw error;
   }
 };
 

@@ -5,6 +5,7 @@ import {
   authenticateToken,
   requireSuperAdmin,
 } from "../middleware/authMiddleware";
+import { mongoose } from "../db";
 import { Teacher } from "../models";
 
 const router = Router();
@@ -71,6 +72,10 @@ router.post(
  */
 router.get("/", async (_req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json([]);
+    }
+
     const teachers = await Teacher.find().sort({ name: 1 });
     res.json(teachers);
   } catch (err: any) {

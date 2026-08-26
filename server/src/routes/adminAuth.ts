@@ -35,7 +35,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
   // 4️⃣ Create token
   const token = jwt.sign(
-    { role: "admin", email },
+    { role: "SUPER_ADMIN", userId: "admin", email },
     process.env.JWT_SECRET as string,
     { expiresIn: "1d" }
   );
